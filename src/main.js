@@ -136,8 +136,9 @@ async function fetchImageFromDanbooruAnime(category) {
 	// Note: Danbooru has a lot of NSFW content. Filtering by SFW tags is crucial.
 	// This is a simplified approach and might not always return a suitable image.
 
-	const tags = category === "sfw" ? "rating:safe" : "rating:questionable rating:explicit";
-	const endpoint = `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=${tags}`;
+	const endpoint = category === "sfw"
+		? `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=rating:safe`
+		: `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=is%3Ansfw`;
 
 	const response = await fetch(endpoint);
 	if (!response.ok) throw new Error(`Danbooru Anime API error: ${response.status}`);
