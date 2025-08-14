@@ -26,7 +26,6 @@ const imageContainer = document.getElementById("image-container");
 const btnWaifuPics = document.getElementById("btn-waifu-pics");
 const btnWaifuIm = document.getElementById("btn-waifu-im");
 const btnNekosBest = document.getElementById("btn-nekos-best"); // New DOM element
-const btnNekosia = document.getElementById("btn-nekosia"); // New DOM element
 const btnDanbooruAnime = document.getElementById("btn-danbooru-anime"); // New DOM element
 const loadingWrapper = document.getElementById("loading-wrapper");
 const progressBar = document.getElementById("progress-bar");
@@ -131,18 +130,6 @@ async function fetchImageFromWaifuIm(category) {
 	return data.images[0].url;
 }
 
-async function fetchImageFromNekosia(category) {
-	// Nekosia API does not have NSFW images. It only supports SFW.
-	// The documentation states: "The API does not offer NSFW images."
-	// We will use the /images/:category endpoint with a safe rating.
-	const endpoint = `https://nekosia.cat/api/images/${category === "sfw" ? "waifu" : "nothing"}?rating=safe`;
-	const response = await fetch(endpoint);
-	if (!response.ok) throw new Error(`Nekosia API error: ${response.status}`);
-	const data = await response.json();
-	if (!data.url) throw new Error("No image URL found from Nekosia API");
-	return data.url;
-}
-
 async function fetchImageFromDanbooruAnime(category) {
 	// Danbooru API is complex and often requires API keys for extensive use.
 	// For a simple random image, we can try to fetch a random post.
@@ -198,9 +185,6 @@ async function fetchWaifuImage() {
 		} else if (state.selectedApi === "nekos.best") {
 			// New condition
 			imageUrl = await Promise.race([fetchImageFromNekosBest(state.category), timeout]);
-		} else if (state.selectedApi === "nekosia") {
-			// New condition for Nekosia API
-			imageUrl = await Promise.race([fetchImageFromNekosia(state.category), timeout]);
 		} else if (state.selectedApi === "danbooru.anime") {
 			// New condition for Danbooru Anime API
 			imageUrl = await Promise.race([fetchImageFromDanbooruAnime(state.category), timeout]);
@@ -284,7 +268,6 @@ function updateApiButtonStates() {
 		"waifu.pics": { sfw: true, nsfw: true },
 		"waifu.im": { sfw: true, nsfw: true },
 		"nekos.best": { sfw: true, nsfw: false }, // Nekos.best does not support NSFW
-		"nekosia": { sfw: true, nsfw: false }, // Nekosia does not support NSFW
 		"danbooru.anime": { sfw: true, nsfw: true }, // Danbooru supports both, but filtering is important
 	};
 
@@ -319,12 +302,14 @@ function updateApiButtonStates() {
 		// Update the state and UI for the new API
 		state.selectedApi = newSelectedApi;
 		// Manually update active class for the new selected API button
-		document.querySelectorAll("#api-selector .category-button").forEach(btn => {
+		document.querySelectorAll("#api-selector .category-button").forEach((btn) => {
 			btn.classList.remove("active");
 		});
 		document.getElementById(`btn-${newSelectedApi.replace(".", "-")}`).classList.add("active");
 		// Optionally, show a message to the user that the API was changed
-		console.warn(`Switched to ${newSelectedApi} because the previously selected API does not support ${currentCategory}.`);
+		console.warn(
+			`Switched to ${newSelectedApi} because the previously selected API does not support ${currentCategory}.`
+		);
 	}
 }
 
@@ -374,9 +359,8 @@ function handleApiChange(newApi) {
 	state.selectedApi = newApi;
 	btnWaifuPics.classList.toggle("active", newApi === "waifu.pics");
 	btnWaifuIm.classList.toggle("active", newApi === "waifu.im");
-	btnNekosBest.classList.toggle("active", newApi === "nekos.best"); // New line
-	btnNekosia.classList.toggle("active", newApi === "nekosia"); // New line
-	btnDanbooruAnime.classList.toggle("active", newApi === "danbooru.anime"); // New line
+	btnNekosBest.classList.toggle("active", newApi === "nekos.best");
+	btnDanbooruAnime.classList.toggle("active", newApi === "danbooru.anime");
 	updateApiButtonStates(); // Call to update button states
 	fetchWaifuImage();
 }
@@ -384,9 +368,10 @@ function handleApiChange(newApi) {
 // API Selection Listeners
 btnWaifuPics.addEventListener("click", () => handleApiChange("waifu.pics"));
 btnWaifuIm.addEventListener("click", () => handleApiChange("waifu.im"));
-btnNekosBest.addEventListener("click", () => handleApiChange("nekos.best")); // New line
-btnNekosia.addEventListener("click", () => handleApiChange("nekosia")); // New line
-btnDanbooruAnime.addEventListener("click", () => handleApiChange("danbooru.anime")); // New line
+btnNekosBest.addEventListener("click", () => handleApiChange("nekos.best"));
+btnDanbooruAnime.addEventListener("click", () => handleApiChange("danbooru.anime"));
+
+fetchWaifuImage();
 
 modalImage.addEventListener("wheel", (e) => {
 	e.preventDefault();
@@ -396,7 +381,7 @@ modalImage.addEventListener("wheel", (e) => {
 	} else {
 		state.scale -= scaleAmount;
 	}
-	state.scale = Math.min(Math.max(0.5, state.scale), 5); // Clamp scale
+	state.scale = Math.min(Math.max(0.5, state.scale), 5);
 	applyModalTransform();
 });
 
